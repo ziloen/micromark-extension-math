@@ -56,6 +56,7 @@ export function mathText(options) {
     let tokenType
     /** @type {Token} */
     let token
+    let dataSeen = false
 
     return start
 
@@ -225,6 +226,7 @@ export function mathText(options) {
 
       effects.consume(code)
       previous = code
+      dataSeen = true
       return data
     }
 
@@ -285,6 +287,9 @@ export function mathText(options) {
      */
     function sequenceCloseBackslashEnd(code) {
       if (code === codeClose) {
+        if (!dataSeen) {
+          return nok(code)
+        }
         effects.consume(code)
         effects.exit('mathTextSequence')
         effects.exit(type)

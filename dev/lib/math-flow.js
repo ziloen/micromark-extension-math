@@ -32,6 +32,8 @@ function tokenizeMathFenced(effects, ok, nok) {
       ? tail[2].sliceSerialize(tail[1], true).length
       : 0
   let sizeOpen = 0
+  let backslashContentSeen = false
+  let isBackslashMath = false
 
   return start
 
@@ -108,6 +110,7 @@ function tokenizeMathFenced(effects, ok, nok) {
       return nok(code)
     }
 
+    isBackslashMath = true
     effects.consume(code)
     effects.exit('mathFlowFenceSequence')
     effects.exit('mathFlowFence')
@@ -306,6 +309,9 @@ function tokenizeMathFenced(effects, ok, nok) {
    * @type {State}
    */
   function after(code) {
+    if (isBackslashMath && !backslashContentSeen) {
+      return nok(code)
+    }
     effects.exit('mathFlow')
     return ok(code)
   }
@@ -362,6 +368,7 @@ function tokenizeMathFenced(effects, ok, nok) {
     }
 
     effects.consume(code)
+    backslashContentSeen = true
     return backslashContentChunk
   }
 
