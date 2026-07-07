@@ -13,7 +13,10 @@
     "markdown",
     "unified"
   ],
-  "repository": "micromark/micromark-extension-math",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/micromark/micromark-extension-math.git"
+  },
   "bugs": "https://github.com/micromark/micromark-extension-math/issues",
   "funding": {
     "type": "opencollective",
