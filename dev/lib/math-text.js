@@ -290,6 +290,7 @@ export function mathText(options) {
         if (!dataSeen) {
           return nok(code)
         }
+
         effects.consume(code)
         effects.exit('mathTextSequence')
         effects.exit(type)

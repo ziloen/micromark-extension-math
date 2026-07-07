@@ -312,6 +312,7 @@ function tokenizeMathFenced(effects, ok, nok) {
     if (isBackslashMath && !backslashContentSeen) {
       return nok(code)
     }
+
     effects.exit('mathFlow')
     return ok(code)
   }

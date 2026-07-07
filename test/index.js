@@ -827,18 +827,15 @@ test('math', async function (t) {
     )
   })
 
-  await t.test(
-    'should not support empty \\[\\] as math',
-    async function () {
-      assert.equal(
-        micromark('\\[\\]', {
-          extensions: [math()],
-          htmlExtensions: [mathHtml()]
-        }),
-        '<p>[]</p>'
-      )
-    }
-  )
+  await t.test('should not support empty \\[\\] as math', async function () {
+    assert.equal(
+      micromark('\\[\\]', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>[]</p>'
+    )
+  })
 
   await t.test(
     'should not support empty \\[\\] as inline math',
@@ -853,18 +850,15 @@ test('math', async function (t) {
     }
   )
 
-  await t.test(
-    'should not support empty \\(\\) as math',
-    async function () {
-      assert.equal(
-        micromark('\\(\\)', {
-          extensions: [math()],
-          htmlExtensions: [mathHtml()]
-        }),
-        '<p>()</p>'
-      )
-    }
-  )
+  await t.test('should not support empty \\(\\) as math', async function () {
+    assert.equal(
+      micromark('\\(\\)', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>()</p>'
+    )
+  })
 
   await t.test(
     'should not support empty \\(\\) as inline math',
@@ -879,33 +873,27 @@ test('math', async function (t) {
     }
   )
 
-  await t.test(
-    'should support non-empty \\[x\\] as math',
-    async function () {
-      assert.equal(
-        micromark('\\[x\\]', {
-          extensions: [math()],
-          htmlExtensions: [mathHtml()]
-        }),
-        '<div class="math math-display">' +
-          renderToString('x', {displayMode: true}) +
-          '</div>'
-      )
-    }
-  )
+  await t.test('should support non-empty \\[x\\] as math', async function () {
+    assert.equal(
+      micromark('\\[x\\]', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<div class="math math-display">' +
+        renderToString('x', {displayMode: true}) +
+        '</div>'
+    )
+  })
 
-  await t.test(
-    'should support non-empty \\(x\\) as math',
-    async function () {
-      assert.equal(
-        micromark('a \\(x\\) b', {
-          extensions: [math()],
-          htmlExtensions: [mathHtml()]
-        }),
-        '<p>a <span class="math math-inline">' +
-          renderToString('x') +
-          '</span> b</p>'
-      )
-    }
-  )
+  await t.test('should support non-empty \\(x\\) as math', async function () {
+    assert.equal(
+      micromark('a \\(x\\) b', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a <span class="math math-inline">' +
+        renderToString('x') +
+        '</span> b</p>'
+    )
+  })
 })
