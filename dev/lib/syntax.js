@@ -1,5 +1,5 @@
 /**
- * @import {Options} from 'micromark-extension-math'
+ * @import {Options} from '@ziloen/micromark-extension-math'
  * @import {Extension} from 'micromark-util-types'
  */
 

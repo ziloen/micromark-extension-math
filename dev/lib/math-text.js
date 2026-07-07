@@ -1,5 +1,5 @@
 /**
- * @import {Options} from 'micromark-extension-math'
+ * @import {Options} from '@ziloen/micromark-extension-math'
  * @import {Construct, Previous, Resolver, State, Token, TokenizeContext, Tokenizer} from 'micromark-util-types'
  */
 
