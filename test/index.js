@@ -896,4 +896,30 @@ test('math', async function (t) {
         '</span> b</p>'
     )
   })
+
+  await t.test(
+    'should not treat \\[\\] brackets as math',
+    async function () {
+      assert.equal(
+        micromark('\\[\\] brackets', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>[] brackets</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not treat \\(\\) parentheses as math',
+    async function () {
+      assert.equal(
+        micromark('\\(\\) parentheses', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>() parentheses</p>'
+      )
+    }
+  )
 })

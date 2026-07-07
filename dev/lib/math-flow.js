@@ -505,12 +505,8 @@ function tokenizeMathFenced(effects, ok, nok) {
      * @type {State}
      */
     function afterSequenceClose(code) {
-      if (code === codes.eof || markdownLineEnding(code)) {
-        effects.exit('mathFlowFence')
-        return ok(code)
-      }
-
-      return nok(code)
+      effects.exit('mathFlowFence')
+      return ok(code)
     }
   }
 }
