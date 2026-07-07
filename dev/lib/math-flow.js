@@ -348,6 +348,14 @@ function tokenizeMathFenced(effects, ok, nok) {
       )(code)
     }
 
+    if (code === codes.backslash) {
+      effects.enter('mathFlowValue')
+      effects.consume(code)
+      backslashContentSeen = true
+      effects.exit('mathFlowValue')
+      return backslashBeforeContentChunk
+    }
+
     effects.enter('mathFlowValue')
     return backslashContentChunk(code)
   }

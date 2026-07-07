@@ -922,4 +922,49 @@ test('math', async function (t) {
       )
     }
   )
+
+  await t.test(
+    'should support backslash commands in flow math',
+    async function () {
+      assert.equal(
+        micromark('\\[\\alpha\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('\\alpha', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support \\\\ line breaks in flow math',
+    async function () {
+      assert.equal(
+        micromark('\\[\\beta \\\\ \\gamma\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('\\beta \\\\ \\gamma', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support \\begin{aligned} in flow math',
+    async function () {
+      assert.equal(
+        micromark('\\[\n\\begin{aligned}\na &= b\n\\end{aligned}\n\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('\\begin{aligned}\na &= b\n\\end{aligned}', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
 })
