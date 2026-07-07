@@ -7,7 +7,11 @@
 // This has to be coordinated together with `mdast-util-math`.
 
 import {ok as assert} from 'devlop'
-import {markdownLineEnding} from 'micromark-util-character'
+import {
+  asciiDigit,
+  markdownLineEnding,
+  markdownSpace
+} from 'micromark-util-character'
 import {codes, types} from 'micromark-util-symbol'
 
 /**
@@ -27,7 +31,7 @@ export function mathText(options) {
   return {
     tokenize: tokenizeMathText,
     resolve: resolveMathText,
-    previous,
+    previous: previousCode,
     name: 'mathText'
   }
 
@@ -37,9 +41,19 @@ export function mathText(options) {
    */
   function tokenizeMathText(effects, ok, nok) {
     const self = this
+    /** @type {number} */
+    let codeOpen = codes.dollarSign
+    /** @type {number} */
+    let codeClose = codes.dollarSign
+    /** @type {'mathText' | 'mathTextDisplay'} */
+    let type = 'mathText'
     let sizeOpen = 0
     /** @type {number} */
     let size
+    /** @type {number | null | undefined} */
+    let previous
+    /** @type {Token} */
+    let tokenType
     /** @type {Token} */
     let token
 
@@ -58,11 +72,25 @@ export function mathText(options) {
      * @type {State}
      */
     function start(code) {
-      assert(code === codes.dollarSign, 'expected `$`')
-      assert(previous.call(self, self.previous), 'expected correct previous')
-      effects.enter('mathText')
+      assert(
+        code === codes.dollarSign || code === codes.backslash,
+        'expected `$` or `\\`'
+      )
+      assert(
+        code === codes.backslash || previousCode.call(self, self.previous),
+        'expected correct previous'
+      )
+
+      if (code === codes.backslash) {
+        codeOpen = codes.leftParenthesis
+        codeClose = codes.rightParenthesis
+      }
+
+      tokenType = effects.enter(type)
       effects.enter('mathTextSequence')
-      return sequenceOpen(code)
+      effects.consume(code)
+      sizeOpen++
+      return code === codes.backslash ? sequenceOpenBackslash : sequenceOpen
     }
 
     /**
@@ -84,12 +112,45 @@ export function mathText(options) {
       }
 
       // Not enough markers in the sequence.
-      if (sizeOpen < 2 && !single) {
+      if (
+        (sizeOpen < 2 && !single) ||
+        (sizeOpen === 1 && !validSingleDollarOpen(code))
+      ) {
         return nok(code)
       }
 
       effects.exit('mathTextSequence')
       return between(code)
+    }
+
+    /**
+     * After the backslash in an opening sequence.
+     *
+     * ```markdown
+     * > | \(a\)
+     *      ^
+     * > | \[a\]
+     *      ^
+     * ```
+     *
+     * @type {State}
+     */
+    function sequenceOpenBackslash(code) {
+      if (code !== codes.leftParenthesis && code !== codes.leftSquareBracket) {
+        return nok(code)
+      }
+
+      codeOpen = code
+      codeClose =
+        code === codes.leftParenthesis
+          ? codes.rightParenthesis
+          : codes.rightSquareBracket
+      type = code === codes.leftParenthesis ? 'mathText' : 'mathTextDisplay'
+
+      tokenType.type = type
+      effects.consume(code)
+      effects.exit('mathTextSequence')
+      return between
     }
 
     /**
@@ -107,10 +168,15 @@ export function mathText(options) {
         return nok(code)
       }
 
-      if (code === codes.dollarSign) {
+      if (code === codes.dollarSign && codeOpen === codes.dollarSign) {
         token = effects.enter('mathTextSequence')
         size = 0
         return sequenceClose(code)
+      }
+
+      if (code === codes.backslash && codeOpen !== codes.dollarSign) {
+        token = effects.enter('mathTextSequence')
+        return sequenceCloseBackslash(code)
       }
 
       // Tabs don’t work, and virtual spaces don’t make sense.
@@ -118,6 +184,7 @@ export function mathText(options) {
         effects.enter('space')
         effects.consume(code)
         effects.exit('space')
+        previous = code
         return between
       }
 
@@ -125,6 +192,7 @@ export function mathText(options) {
         effects.enter(types.lineEnding)
         effects.consume(code)
         effects.exit(types.lineEnding)
+        previous = code
         return between
       }
 
@@ -147,7 +215,8 @@ export function mathText(options) {
       if (
         code === codes.eof ||
         code === codes.space ||
-        code === codes.dollarSign ||
+        (code === codes.dollarSign && codeOpen === codes.dollarSign) ||
+        (code === codes.backslash && codeOpen !== codes.dollarSign) ||
         markdownLineEnding(code)
       ) {
         effects.exit('mathTextData')
@@ -155,6 +224,7 @@ export function mathText(options) {
       }
 
       effects.consume(code)
+      previous = code
       return data
     }
 
@@ -178,14 +248,51 @@ export function mathText(options) {
       }
 
       // Done!
-      if (size === sizeOpen) {
+      if (
+        size === sizeOpen &&
+        (sizeOpen !== 1 || validSingleDollarClose(previous, code))
+      ) {
         effects.exit('mathTextSequence')
-        effects.exit('mathText')
+        effects.exit(type)
         return ok(code)
       }
 
       // More or less accents: mark as data.
       token.type = 'mathTextData'
+      return data(code)
+    }
+
+    /**
+     * In a closing backslash sequence.
+     *
+     * ```markdown
+     * > | \(a\)
+     *        ^
+     * ```
+     *
+     * @type {State}
+     */
+    function sequenceCloseBackslash(code) {
+      assert(code === codes.backslash, 'expected `\\`')
+      effects.consume(code)
+      return sequenceCloseBackslashEnd
+    }
+
+    /**
+     * After the backslash in a closing sequence.
+     *
+     * @type {State}
+     */
+    function sequenceCloseBackslashEnd(code) {
+      if (code === codeClose) {
+        effects.consume(code)
+        effects.exit('mathTextSequence')
+        effects.exit(type)
+        return ok
+      }
+
+      token.type = 'mathTextData'
+      previous = codes.backslash
       return data(code)
     }
   }
@@ -258,10 +365,38 @@ function resolveMathText(events) {
  * @this {TokenizeContext}
  * @type {Previous}
  */
-function previous(code) {
+function previousCode(code) {
   // If there is a previous code, there will always be a tail.
   return (
     code !== codes.dollarSign ||
     this.events[this.events.length - 1][1].type === types.characterEscape
+  )
+}
+
+/**
+ * @param {number | null} code
+ *   Code.
+ * @returns {boolean}
+ *   Whether `code` can follow an opening single dollar.
+ */
+function validSingleDollarOpen(code) {
+  return code !== codes.eof && !markdownLineEnding(code) && !markdownSpace(code)
+}
+
+/**
+ * @param {number | null | undefined} before
+ *   Code before the closing dollar.
+ * @param {number | null} after
+ *   Code after the closing dollar.
+ * @returns {boolean}
+ *   Whether a single dollar can close.
+ */
+function validSingleDollarClose(before, after) {
+  return (
+    before !== undefined &&
+    before !== codes.eof &&
+    !markdownLineEnding(before) &&
+    !markdownSpace(before) &&
+    !asciiDigit(after)
   )
 }

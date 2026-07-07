@@ -10,9 +10,14 @@
 
 [micromark][] extensions to support math (`$C_L$`).
 
+This is a fork of [`micromark/micromark-extension-math`][upstream].
+It adds Pandoc-style backslash math delimiters and tightens single-dollar
+delimiter handling while keeping existing multi-dollar inline compatibility.
+
 ## Contents
 
 * [What is this?](#what-is-this)
+* [Fork changes](#fork-changes)
 * [When to use this](#when-to-use-this)
 * [Install](#install)
 * [Use](#use)
@@ -39,6 +44,20 @@ in markdown to [`micromark`][micromark].
 
 As there is no spec for math in markdown, this extension follows how code
 (fenced and text) works in Commonmark, but uses dollars.
+
+## Fork changes
+
+This fork adds support for `\(...\)` as inline math and `\[...\]` as display
+math.
+Display math with `\[...\]` is supported both as a block and inside text.
+
+Single-dollar inline math follows the Pandoc delimiter convention: the opening
+`$` must be followed by a non-space character, and the closing `$` must be
+preceded by a non-space character and must not be followed by a digit.
+This prevents currency such as `$20,000 and $30,000` from being parsed as math.
+
+For compatibility with the original package, inline math with two or more
+dollars, such as `$$x$$` and `$$$x$$$`, is still supported.
 
 ## When to use this
 
@@ -92,6 +111,9 @@ Lift($L$) can be determined by Lift Coefficient ($C_L$) like the following equat
 $$
 L = \frac{1}{2} \rho v^2 S C_L
 $$
+
+The same inline and display math can also be written with backslash delimiters:
+\(C_L\) and \[L = \frac{1}{2} \rho v^2 S C_L\].
 ```
 
 …and our module `example.js` looks as follows:
@@ -220,6 +242,16 @@ At the time of writing, the last version is:
 ```
 
 ## Syntax
+
+This fork supports both dollar and backslash math delimiters:
+
+* `$...$` for inline math, with Pandoc-style single-dollar delimiter rules.
+* `$$...$$` and longer dollar sequences for existing inline compatibility.
+* `\(...\)` for inline math.
+* `\[...\]` for display math.
+
+As in Pandoc, enabling `\(...\)` and `\[...\]` means paired `\(` and `\[`
+sequences are treated as math delimiters instead of simple escapes.
 
 Math forms with the following BNF:
 
@@ -403,6 +435,8 @@ abide by its terms.
 [development]: https://nodejs.org/api/packages.html#packages_resolving_user_conditions
 
 [micromark]: https://github.com/micromark/micromark
+
+[upstream]: https://github.com/micromark/micromark-extension-math
 
 [micromark-content-types]: https://github.com/micromark/micromark#content-types
 

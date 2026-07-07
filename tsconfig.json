@@ -10,7 +10,8 @@
     // `KaTeX` types needs DOM types, which we don’t require.
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2022"
+    "target": "es2022",
+    "types": ["node"]
   },
   "exclude": ["coverage/", "lib/", "node_modules/", "index.js"],
   "include": ["**/*.js", "dev/index.d.ts"]

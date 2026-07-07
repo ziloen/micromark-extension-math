@@ -48,10 +48,19 @@ function tokenizeMathFenced(effects, ok, nok) {
    * @type {State}
    */
   function start(code) {
-    assert(code === codes.dollarSign, 'expected `$`')
+    assert(
+      code === codes.dollarSign || code === codes.backslash,
+      'expected `$` or `\\`'
+    )
     effects.enter('mathFlow')
     effects.enter('mathFlowFence')
     effects.enter('mathFlowFenceSequence')
+
+    if (code === codes.backslash) {
+      effects.consume(code)
+      return sequenceOpenBackslash
+    }
+
     return sequenceOpen(code)
   }
 
@@ -80,6 +89,34 @@ function tokenizeMathFenced(effects, ok, nok) {
 
     effects.exit('mathFlowFenceSequence')
     return factorySpace(effects, metaBefore, types.whitespace)(code)
+  }
+
+  /**
+   * After the backslash in an opening fence sequence.
+   *
+   * ```markdown
+   * > | \[
+   *      ^
+   *   | \frac{1}{2}
+   *   | \]
+   * ```
+   *
+   * @type {State}
+   */
+  function sequenceOpenBackslash(code) {
+    if (code !== codes.leftSquareBracket) {
+      return nok(code)
+    }
+
+    effects.consume(code)
+    effects.exit('mathFlowFenceSequence')
+    effects.exit('mathFlowFence')
+
+    if (self.interrupt) {
+      return ok
+    }
+
+    return backslashContentStart
   }
 
   /**
@@ -273,6 +310,61 @@ function tokenizeMathFenced(effects, ok, nok) {
     return ok(code)
   }
 
+  /**
+   * Before math content or a closing backslash fence.
+   *
+   * @type {State}
+   */
+  function backslashContentStart(code) {
+    return effects.attempt(
+      {tokenize: tokenizeClosingBackslashFence, partial: true},
+      after,
+      backslashBeforeContentChunk
+    )(code)
+  }
+
+  /**
+   * Before math content, definitely not before a closing backslash fence.
+   *
+   * @type {State}
+   */
+  function backslashBeforeContentChunk(code) {
+    if (code === codes.eof) {
+      return after(code)
+    }
+
+    if (markdownLineEnding(code)) {
+      return effects.attempt(
+        nonLazyContinuation,
+        backslashContentStart,
+        after
+      )(code)
+    }
+
+    effects.enter('mathFlowValue')
+    return backslashContentChunk(code)
+  }
+
+  /**
+   * In backslash-delimited math content.
+   *
+   * @type {State}
+   */
+  function backslashContentChunk(code) {
+    if (code === codes.eof || markdownLineEnding(code)) {
+      effects.exit('mathFlowValue')
+      return backslashBeforeContentChunk(code)
+    }
+
+    if (code === codes.backslash) {
+      effects.exit('mathFlowValue')
+      return backslashContentStart(code)
+    }
+
+    effects.consume(code)
+    return backslashContentChunk
+  }
+
   /** @type {Tokenizer} */
   function tokenizeClosingFence(effects, ok, nok) {
     let size = 0
@@ -351,6 +443,56 @@ function tokenizeMathFenced(effects, ok, nok) {
      * > | $$
      *       ^
      * ```
+     *
+     * @type {State}
+     */
+    function afterSequenceClose(code) {
+      if (code === codes.eof || markdownLineEnding(code)) {
+        effects.exit('mathFlowFence')
+        return ok(code)
+      }
+
+      return nok(code)
+    }
+  }
+
+  /** @type {Tokenizer} */
+  function tokenizeClosingBackslashFence(effects, ok, nok) {
+    return beforeSequenceClose
+
+    /**
+     * In closing fence sequence.
+     *
+     * @type {State}
+     */
+    function beforeSequenceClose(code) {
+      if (code !== codes.backslash) {
+        return nok(code)
+      }
+
+      effects.enter('mathFlowFence')
+      effects.enter('mathFlowFenceSequence')
+      effects.consume(code)
+      return sequenceClose
+    }
+
+    /**
+     * After the backslash in a closing fence sequence.
+     *
+     * @type {State}
+     */
+    function sequenceClose(code) {
+      if (code !== codes.rightSquareBracket) {
+        return nok(code)
+      }
+
+      effects.consume(code)
+      effects.exit('mathFlowFenceSequence')
+      return factorySpace(effects, afterSequenceClose, types.whitespace)
+    }
+
+    /**
+     * After closing fence sequence, after optional whitespace.
      *
      * @type {State}
      */

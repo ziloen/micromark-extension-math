@@ -17,8 +17,10 @@ import {mathText} from './math-text.js'
  *   enable math syntax.
  */
 export function math(options) {
+  const text = mathText(options)
+
   return {
-    flow: {[codes.dollarSign]: mathFlow},
-    text: {[codes.dollarSign]: mathText(options)}
+    flow: {[codes.dollarSign]: mathFlow, [codes.backslash]: mathFlow},
+    text: {[codes.dollarSign]: text, [codes.backslash]: text}
   }
 }

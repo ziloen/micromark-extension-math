@@ -18,11 +18,11 @@ test('math', async function (t) {
     'should skip `mathFlow` and `mathText` construct if `disable.null` includes `mathFlow` and `mathText`',
     async function () {
       assert.equal(
-        micromark('$a$, $$b$$\n\n$$\nc\n$$', {
+        micromark('$a$, $$b$$, \\(c\\), \\[d\\]\n\n$$\ne\n$$\n\n\\[\nf\n\\]', {
           extensions: [math(), {disable: {null: ['mathFlow', 'mathText']}}],
           htmlExtensions: [mathHtml()]
         }),
-        '<p>$a$, $$b$$</p>\n<p>$$\nc\n$$</p>'
+        '<p>$a$, $$b$$, (c), [d]</p>\n<p>$$\ne\n$$</p>\n<p>[\nf\n]</p>'
       )
     }
   )
@@ -176,6 +176,51 @@ test('math', async function (t) {
   )
 
   await t.test(
+    'should support math (text) w/ backslash parentheses',
+    async function () {
+      assert.equal(
+        micromark('a \\(b\\)', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a <span class="math math-inline">' +
+          renderToString('b') +
+          '</span></p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support TeX commands in backslash parenthesized math (text)',
+    async function () {
+      assert.equal(
+        micromark('a \\(\\sqrt{3x-1}\\) b', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a <span class="math math-inline">' +
+          renderToString('\\sqrt{3x-1}') +
+          '</span> b</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support EOLs in backslash parenthesized math',
+    async function () {
+      assert.equal(
+        micromark('a \\(b\nc\\) d', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a <span class="math math-inline">' +
+          renderToString('b\nc') +
+          '</span> d</p>'
+      )
+    }
+  )
+
+  await t.test(
     'should support math (text) w/ two dollar signs',
     async function () {
       assert.equal(
@@ -218,6 +263,58 @@ test('math', async function (t) {
   })
 
   await t.test(
+    'should not support single dollar math when opening is followed by a space',
+    async function () {
+      assert.equal(
+        micromark('$ x$', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$ x$</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support single dollar math when closing is preceded by a space',
+    async function () {
+      assert.equal(
+        micromark('$x $', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$x $</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support single dollar math when closing is followed by a digit',
+    async function () {
+      assert.equal(
+        micromark('$x$20', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$x$20</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support currency as single dollar math',
+    async function () {
+      assert.equal(
+        micromark('$20,000 and $30,000', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$20,000 and $30,000</p>'
+      )
+    }
+  )
+
+  await t.test(
     'should not support math (flow) w/ one dollar sign',
     async function () {
       assert.equal(
@@ -225,9 +322,7 @@ test('math', async function (t) {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
-        '<p><span class="math math-inline">' +
-          renderToString('a') +
-          '</span></p>'
+        '<p>$\na\n$</p>'
       )
     }
   )
@@ -243,6 +338,51 @@ test('math', async function (t) {
         '<div class="math math-display">' +
           renderToString('a', {displayMode: true}) +
           '</div>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support math (flow) w/ backslash square brackets',
+    async function () {
+      assert.equal(
+        micromark('\\[a\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('a', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support multiline math (flow) w/ backslash square brackets',
+    async function () {
+      assert.equal(
+        micromark('\\[\na\n\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('a', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support math (text display) w/ backslash square brackets',
+    async function () {
+      assert.equal(
+        micromark('a \\[b\\] c', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a <div class="math math-display">' +
+          renderToString('b', {displayMode: true}) +
+          '</div> c</p>'
       )
     }
   )
@@ -500,6 +640,190 @@ test('math', async function (t) {
       '<p>a</p>\n<blockquote>\n<div class="math math-display">' +
         renderToString('', {displayMode: true}) +
         '</div>\n</blockquote>'
+    )
+  })
+
+  await t.test(
+    'should not support mixed delimiters: $ with \\]',
+    async function () {
+      assert.equal(
+        micromark('a $b\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a $b]</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: $ with \\)',
+    async function () {
+      assert.equal(
+        micromark('a $b\\)', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a $b)</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: \\( with $',
+    async function () {
+      assert.equal(
+        micromark('a \\(b$', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a (b$</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: \\( with \\]',
+    async function () {
+      assert.equal(
+        micromark('a \\(b\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a (b]</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: \\[ with $',
+    async function () {
+      assert.equal(
+        micromark('a \\[b$', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a [b$</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: \\[ with \\)',
+    async function () {
+      assert.equal(
+        micromark('a \\[b\\)', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a [b)</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: $$ with \\]',
+    async function () {
+      assert.equal(
+        micromark('a $$b\\]', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a $$b]</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not support mixed delimiters: unequal dollar count',
+    async function () {
+      assert.equal(
+        micromark('a $$$b$$', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a $$$b$$</p>'
+      )
+    }
+  )
+
+  await t.test('should not support opening-only $', async function () {
+    assert.equal(
+      micromark('a $b', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a $b</p>'
+    )
+  })
+
+  await t.test('should not support opening-only \\(', async function () {
+    assert.equal(
+      micromark('a \\(b', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a (b</p>'
+    )
+  })
+
+  await t.test('should not support opening-only \\[', async function () {
+    assert.equal(
+      micromark('a \\[b', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a [b</p>'
+    )
+  })
+
+  await t.test('should not support opening-only $$', async function () {
+    assert.equal(
+      micromark('a $$b', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a $$b</p>'
+    )
+  })
+
+  await t.test('should not support closing-only $', async function () {
+    assert.equal(
+      micromark('a$', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a$</p>'
+    )
+  })
+
+  await t.test('should not support closing-only $$', async function () {
+    assert.equal(
+      micromark('a$$', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a$$</p>'
+    )
+  })
+
+  await t.test('should not support closing-only \\)', async function () {
+    assert.equal(
+      micromark('a\\)', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a)</p>'
+    )
+  })
+
+  await t.test('should not support closing-only \\]', async function () {
+    assert.equal(
+      micromark('a\\]', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>a]</p>'
     )
   })
 })
