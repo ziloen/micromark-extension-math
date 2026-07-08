@@ -263,27 +263,31 @@ test('math', async function (t) {
   })
 
   await t.test(
-    'should not support single dollar math when opening is followed by a space',
+    'should support single dollar math when opening is followed by a space (VS Code alignment)',
     async function () {
       assert.equal(
         micromark('$ x$', {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
-        '<p>$ x$</p>'
+        '<p><span class="math math-inline">' +
+          renderToString(' x') +
+          '</span></p>'
       )
     }
   )
 
   await t.test(
-    'should not support single dollar math when closing is preceded by a space',
+    'should support single dollar math when closing is preceded by a space (VS Code alignment)',
     async function () {
       assert.equal(
         micromark('$x $', {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
-        '<p>$x $</p>'
+        '<p><span class="math math-inline">' +
+          renderToString('x ') +
+          '</span></p>'
       )
     }
   )
@@ -315,14 +319,16 @@ test('math', async function (t) {
   )
 
   await t.test(
-    'should not support math (flow) w/ one dollar sign',
+    'should support math w/ single dollar sign and newlines (VS Code alignment)',
     async function () {
       assert.equal(
         micromark('$\na\n$', {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
-        '<p>$\na\n$</p>'
+        '<p><span class="math math-inline">' +
+          renderToString('a') +
+          '</span></p>'
       )
     }
   )
@@ -966,4 +972,183 @@ test('math', async function (t) {
       )
     }
   )
+})
+
+// ——— VS Code markdown-it-katex alignment tests ———
+// These tests verify that the single-dollar delimiter behavior matches
+// VS Code's `vscode-markdown-it-katex` (checking outer word boundaries
+// instead of inner content adjacency).
+
+test('math (VS Code alignment)', async function (t) {
+  await t.test(
+    'should render inline math with spaces around content',
+    async function () {
+      assert.equal(
+        micromark("Euler's identity: $ e^{i \\pi} + 1 = 0 $", {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>Euler\'s identity: <span class="math math-inline">' +
+          renderToString('e^{i \\pi} + 1 = 0') +
+          '</span></p>'
+      )
+    }
+  )
+
+  await t.test('should render simple inline math', async function () {
+    assert.equal(
+      micromark('$1+1 = 2$', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p><span class="math math-inline">' +
+        renderToString('1+1 = 2') +
+        '</span></p>'
+    )
+  })
+
+  await t.test('should render math embedded in a word', async function () {
+    assert.equal(
+      micromark('The $N$-eigenvalue problem', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>The <span class="math math-inline">' +
+        renderToString('N') +
+        '</span>-eigenvalue problem</p>'
+    )
+  })
+
+  await t.test(
+    'should not parse isolated dollar sign (only one $)',
+    async function () {
+      assert.equal(
+        micromark('It costs $5.', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>It costs $5.</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not parse isolated dollar sign with spaces',
+    async function () {
+      assert.equal(
+        micromark('a $ b', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a $ b</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not parse dollar sign in the middle of a word',
+    async function () {
+      assert.equal(
+        micromark('a$b$c', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a$b$c</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not parse when closing dollar is followed by a digit',
+    async function () {
+      assert.equal(
+        micromark('$x$20', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$x$20</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not parse when closing dollar is followed by a letter',
+    async function () {
+      assert.equal(
+        micromark('$x$abc', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>$x$abc</p>'
+      )
+    }
+  )
+
+  await t.test('should not parse currency amounts', async function () {
+    assert.equal(
+      micromark('This costs $5 and $10.', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>This costs $5 and $10.</p>'
+    )
+  })
+
+  await t.test('should not parse currency with comma', async function () {
+    assert.equal(
+      micromark('$20,000 and $30,000', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>$20,000 and $30,000</p>'
+    )
+  })
+
+  await t.test('should render math preceded by punctuation', async function () {
+    assert.equal(
+      micromark('foo, $x^2$ bar', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>foo, <span class="math math-inline">' +
+        renderToString('x^2') +
+        '</span> bar</p>'
+    )
+  })
+
+  await t.test('should render math followed by punctuation', async function () {
+    assert.equal(
+      micromark('$x^2$, bar', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p><span class="math math-inline">' +
+        renderToString('x^2') +
+        '</span>, bar</p>'
+    )
+  })
+
+  await t.test('should render math preceded by colon', async function () {
+    assert.equal(
+      micromark('Identity: $e^{i\\pi} + 1 = 0$.', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p>Identity: <span class="math math-inline">' +
+        renderToString('e^{i\\pi} + 1 = 0') +
+        '</span>.</p>'
+    )
+  })
+
+  await t.test('should render the binomial theorem', async function () {
+    assert.equal(
+      micromark('$\\sum_{k=0}^n \\binom{n}{k} x^k y^{n-k} = (x+y)^n$', {
+        extensions: [math()],
+        htmlExtensions: [mathHtml()]
+      }),
+      '<p><span class="math math-inline">' +
+        renderToString('\\sum_{k=0}^n \\binom{n}{k} x^k y^{n-k} = (x+y)^n') +
+        '</span></p>'
+    )
+  })
 })
