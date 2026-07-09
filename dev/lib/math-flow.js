@@ -115,10 +115,6 @@ function tokenizeMathFenced(effects, ok, nok) {
     effects.exit('mathFlowFenceSequence')
     effects.exit('mathFlowFence')
 
-    if (self.interrupt) {
-      return ok
-    }
-
     return backslashContentStart
   }
 

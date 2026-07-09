@@ -51,6 +51,8 @@ export function mathText(options) {
     /** @type {Token} */
     let token
     let dataSeen = false
+    /** @type {number | null | undefined} */
+    let beforeOpen
 
     return start
 
@@ -81,6 +83,7 @@ export function mathText(options) {
         codeClose = codes.rightParenthesis
       }
 
+      beforeOpen = self.previous
       tokenType = effects.enter(type)
       effects.enter('mathTextSequence')
       effects.consume(code)
@@ -109,7 +112,7 @@ export function mathText(options) {
       // Not enough markers in the sequence.
       if (
         (sizeOpen < 2 && !single) ||
-        (sizeOpen === 1 && !validSingleDollarOpen(self.previous))
+        (sizeOpen === 1 && !validSingleDollarOpen(beforeOpen))
       ) {
         return nok(code)
       }
@@ -373,14 +376,12 @@ function previousCode(code) {
  * Check if a character code is a "word" character (alphanumeric or underscore).
  * Matches VS Code's `isWordCharacterOrNumber` (`[\w\d]`).
  *
- * @param {number | null | undefined} code
+ * @param {number} code
  *   Character code.
  * @returns {boolean}
  *   Whether the code is a word character.
  */
 function isWordCharacter(code) {
-  if (code === null || code === undefined) return false
-  // A-z (97-122), A-Z (65-90), 0-9 (48-57), _ (95)
   return (
     (code >= 65 && code <= 90) ||
     (code >= 97 && code <= 122) ||

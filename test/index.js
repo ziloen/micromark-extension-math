@@ -451,6 +451,21 @@ test('math', async function (t) {
   )
 
   await t.test(
+    'should support backslash math (flow) w/o closing fence',
+    async function () {
+      assert.equal(
+        micromark('\\[\na', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<div class="math math-display">' +
+          renderToString('a', {displayMode: true}) +
+          '</div>'
+      )
+    }
+  )
+
+  await t.test(
     'should support math (flow) w/ a meta string',
     async function () {
       assert.equal(
@@ -542,6 +557,24 @@ test('math', async function (t) {
     async function () {
       assert.equal(
         micromark('> $$\n> a\n> $$\n> b', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<blockquote>\n' +
+          '<div class="math math-display">' +
+          renderToString('a', {displayMode: true}) +
+          '</div>\n' +
+          '<p>b</p>\n' +
+          '</blockquote>'
+      )
+    }
+  )
+
+  await t.test(
+    'should support backslash math (flow) in a block quote',
+    async function () {
+      assert.equal(
+        micromark('> \\[\n> a\n> \\]\n> b', {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
@@ -1054,6 +1087,19 @@ test('math (VS Code alignment)', async function (t) {
           htmlExtensions: [mathHtml()]
         }),
         '<p>a$b$c</p>'
+      )
+    }
+  )
+
+  await t.test(
+    'should not parse when opening dollar is preceded by a word character',
+    async function () {
+      assert.equal(
+        micromark('a$b$.', {
+          extensions: [math()],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a$b$.</p>'
       )
     }
   )
