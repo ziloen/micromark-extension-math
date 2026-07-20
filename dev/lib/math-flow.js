@@ -21,7 +21,6 @@ const nonLazyContinuation = {
 }
 
 /**
- * @this {TokenizeContext}
  * @type {Tokenizer}
  */
 function tokenizeMathFenced(effects, ok, nok) {
@@ -516,7 +515,6 @@ function tokenizeMathFenced(effects, ok, nok) {
 }
 
 /**
- * @this {TokenizeContext}
  * @type {Tokenizer}
  */
 function tokenizeNonLazyContinuation(effects, ok, nok) {
