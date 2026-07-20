@@ -19,9 +19,14 @@ import {codes, types} from 'micromark-util-symbol'
 export function mathText(options) {
   const options_ = options || {}
   let single = options_.singleDollarTextMath
+  let display = options_.displayMathInText
 
   if (single === null || single === undefined) {
     single = true
+  }
+
+  if (display === null || display === undefined) {
+    display = false
   }
 
   return {
@@ -32,7 +37,6 @@ export function mathText(options) {
   }
 
   /**
-   * @this {TokenizeContext}
    * @type {Tokenizer}
    */
   function tokenizeMathText(effects, ok, nok) {
@@ -117,6 +121,11 @@ export function mathText(options) {
         return nok(code)
       }
 
+      if (display && sizeOpen > 1) {
+        type = 'mathTextDisplay'
+        tokenType.type = type
+      }
+
       effects.exit('mathTextSequence')
       return between(code)
     }
@@ -143,7 +152,10 @@ export function mathText(options) {
         code === codes.leftParenthesis
           ? codes.rightParenthesis
           : codes.rightSquareBracket
-      type = code === codes.leftParenthesis ? 'mathText' : 'mathTextDisplay'
+      type =
+        code === codes.leftParenthesis || !display
+          ? 'mathText'
+          : 'mathTextDisplay'
 
       tokenType.type = type
       effects.consume(code)
@@ -361,7 +373,6 @@ function resolveMathText(events) {
 }
 
 /**
- * @this {TokenizeContext}
  * @type {Previous}
  */
 function previousCode(code) {

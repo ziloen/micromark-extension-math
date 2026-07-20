@@ -12,7 +12,8 @@
 
 This is a fork of [`micromark/micromark-extension-math`][upstream].
 It adds Pandoc-style backslash math delimiters and tightens single-dollar
-delimiter handling while keeping existing multi-dollar inline compatibility.
+delimiter handling while allowing display-style delimiters in text to opt into
+display rendering.
 
 ## Contents
 
@@ -47,9 +48,9 @@ As there is no spec for math in markdown, this extension follows how code
 
 ## Fork changes
 
-This fork adds support for `\(...\)` as inline math and `\[...\]` as display
-math.
-Display math with `\[...\]` is supported both as a block and inside text.
+This fork adds support for `\(...\)` and `\[...\]` backslash math delimiters.
+Display math with `\[...\]` is supported as a block; inside text, `\[...\]`
+is inline by default and can render as display math with `displayMathInText`.
 
 Single-dollar inline math follows the Pandoc delimiter convention: the opening
 `$` must be followed by a non-space character, and the closing `$` must be
@@ -57,7 +58,8 @@ preceded by a non-space character and must not be followed by a digit.
 This prevents currency such as `$20,000 and $30,000` from being parsed as math.
 
 For compatibility with the original package, inline math with two or more
-dollars, such as `$$x$$` and `$$$x$$$`, is still supported.
+dollars, such as `$$x$$` and `$$$x$$$`, is still supported by default.
+It can render as display math with `displayMathInText`.
 
 ## When to use this
 
@@ -112,7 +114,7 @@ $$
 L = \frac{1}{2} \rho v^2 S C_L
 $$
 
-The same inline and display math can also be written with backslash delimiters:
+The same math can also be written with backslash delimiters:
 \(C_L\) and \[L = \frac{1}{2} \rho v^2 S C_L\].
 ```
 
@@ -183,8 +185,8 @@ math when serializing to HTML ([`HtmlExtension`][micromark-html-extension]).
 Configuration for HTML output (optional).
 
 > 👉 **Note**: passed to [`katex.renderToString`][katex-options].
-> `displayMode` is overwritten by this plugin, to `false` for math in text
-> (inline), and `true` for math in flow (block).
+> `displayMode` is overwritten by this plugin, to `false` for inline math and
+> `true` for display math.
 
 ###### Type
 
@@ -198,6 +200,10 @@ Configuration (TypeScript type).
 
 ###### Fields
 
+* `displayMathInText` (`boolean`, default: `false`)
+  — whether to render display-style delimiters in text as display math.
+  When enabled, `$$...$$` and `\[...\]` used inside text render as display
+  math.
 * `singleDollarTextMath` (`boolean`, default: `true`)
   — whether to support math (text, inline) with a single dollar.
   Single dollars work in Pandoc and many other places, but often interfere
@@ -246,9 +252,10 @@ At the time of writing, the last version is:
 This fork supports both dollar and backslash math delimiters:
 
 * `$...$` for inline math, with Pandoc-style single-dollar delimiter rules.
-* `$$...$$` and longer dollar sequences for existing inline compatibility.
+* `$$...$$` and longer dollar sequences for inline math by default, or display
+  math with `displayMathInText`.
 * `\(...\)` for inline math.
-* `\[...\]` for display math.
+* `\[...\]` for display math in flow, and inline math in text by default.
 
 As in Pandoc, enabling `\(...\)` and `\[...\]` means paired `\(` and `\[`
 sequences are treated as math delimiters instead of simple escapes.

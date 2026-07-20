@@ -7,14 +7,14 @@ export {math} from './lib/syntax.js'
  * Configuration for HTML output.
  *
  * > 👉 **Note**: passed to `katex.renderToString`.
- * > `displayMode` is overwritten by this plugin, to `false` for math in
- * > text (inline), and `true` for math in flow (block).
+ * > `displayMode` is overwritten by this plugin, to `false` for inline math
+ * > and `true` for display math.
  */
 export interface HtmlOptions extends KatexOptions {
   /**
    * The field `displayMode` cannot be passed to `micromark-extension-math`.
-   * It is overwritten by it,
-   * to `false` for math in text (inline) and `true` for math in flow (block).
+   * It is overwritten by it, to `false` for inline math and `true` for
+   * display math.
    */
   displayMode?: never
 }
@@ -23,6 +23,15 @@ export interface HtmlOptions extends KatexOptions {
  * Configuration.
  */
 export interface Options {
+  /**
+   * Whether to render display-style math delimiters in text as display math
+   * (default: `false`).
+   *
+   * When enabled, `$$...$$` and `\[...\]` used inside text render as display
+   * math.
+   */
+  displayMathInText?: boolean | null | undefined
+
   /**
    * Whether to support math (text) with a single dollar (default: `true`).
    *

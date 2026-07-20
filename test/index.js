@@ -64,6 +64,23 @@ test('math', async function (t) {
   )
 
   await t.test(
+    'should support display math in text with `displayMathInText: true`',
+    async function () {
+      assert.equal(
+        micromark('a $$b$$, \\[c\\] d', {
+          extensions: [math({displayMathInText: true})],
+          htmlExtensions: [mathHtml()]
+        }),
+        '<p>a <div class="math math-display">' +
+          renderToString('b', {displayMode: true}) +
+          '</div>, <div class="math math-display">' +
+          renderToString('c', {displayMode: true}) +
+          '</div> d</p>'
+      )
+    }
+  )
+
+  await t.test(
     'should support an escaped dollar sign which would otherwise open math',
     async function () {
       assert.equal(
@@ -379,16 +396,16 @@ test('math', async function (t) {
   )
 
   await t.test(
-    'should support math (text display) w/ backslash square brackets',
+    'should support math (text) w/ backslash square brackets',
     async function () {
       assert.equal(
         micromark('a \\[b\\] c', {
           extensions: [math()],
           htmlExtensions: [mathHtml()]
         }),
-        '<p>a <div class="math math-display">' +
-          renderToString('b', {displayMode: true}) +
-          '</div> c</p>'
+        '<p>a <span class="math math-inline">' +
+          renderToString('b') +
+          '</span> c</p>'
       )
     }
   )
